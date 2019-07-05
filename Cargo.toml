@@ -7,3 +7,6 @@ edition = "2018"
 [dependencies]
 gtk = "0.7"
 gio = "0.7"
+numeric-algs = "0.2"
+nalgebra = "0.18"
+num = "*"

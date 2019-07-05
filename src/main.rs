@@ -1,3 +1,5 @@
+mod simulation;
+
 use gio::prelude::*;
 use gio::ApplicationFlags;
 use gtk::prelude::*;
