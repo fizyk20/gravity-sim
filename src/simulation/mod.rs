@@ -1,6 +1,6 @@
 mod body;
 
-use body::Body;
+pub use body::Body;
 use nalgebra::{DVector, Vector2};
 use num::Zero;
 use numeric_algs::{State, StateDerivative};
@@ -15,7 +15,7 @@ const DIM: usize = 2;
 // Length: 1 = 10^8 m (100 000 km)
 // Time: 1 = 7 days (a week)
 // Mass: 1 = 10^24 kg
-const G: f64 = 24.412652716032003;
+pub const G: f64 = 24.412652716032003;
 
 #[derive(Clone)]
 pub struct SimState {
