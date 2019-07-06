@@ -5,8 +5,8 @@ use std::f64::consts::PI;
 
 pub enum SceneCenter {
     Free(f64, f64),
-    CenterOfMass,
-    Body(usize),
+    CenterOfMass(f64, f64),
+    Body(usize, f64, f64),
 }
 
 pub struct Renderer {
@@ -22,7 +22,7 @@ impl Renderer {
             state,
             da_width,
             da_height,
-            center: SceneCenter::CenterOfMass,
+            center: SceneCenter::CenterOfMass(0.0, 0.0),
         }
     }
 
@@ -47,10 +47,27 @@ impl Renderer {
     fn center(&self) -> (f64, f64) {
         match self.center {
             SceneCenter::Free(x, y) => (x, y),
-            SceneCenter::CenterOfMass => self.center_of_mass(),
-            SceneCenter::Body(i) => {
+            SceneCenter::CenterOfMass(add_x, add_y) => {
+                let (x, y) = self.center_of_mass();
+                (x + add_x, y + add_y)
+            }
+            SceneCenter::Body(i, add_x, add_y) => {
                 let body = self.state.get_body(i);
-                (body.pos[0], body.pos[1])
+                (body.pos[0] + add_x, body.pos[1] + add_y)
+            }
+        }
+    }
+
+    pub fn shift_center(&mut self, dx: f64, dy: f64) {
+        let dx = -dx / self.scale();
+        let dy = dy / self.scale();
+
+        match self.center {
+            SceneCenter::Free(ref mut x, ref mut y)
+            | SceneCenter::CenterOfMass(ref mut x, ref mut y)
+            | SceneCenter::Body(_, ref mut x, ref mut y) => {
+                *x += dx;
+                *y += dy;
             }
         }
     }

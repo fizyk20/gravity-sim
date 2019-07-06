@@ -1,6 +1,8 @@
+mod mouse_state;
 mod renderer;
 mod simulation;
 
+use gdk;
 use gio::prelude::*;
 use gio::ApplicationFlags;
 use glib;
@@ -12,6 +14,7 @@ use std::rc::Rc;
 use std::thread;
 use std::time::Instant;
 
+use mouse_state::MouseState;
 use nalgebra::Vector2;
 use numeric_algs::integration::{Integrator, RK4Integrator, StepSize};
 use renderer::Renderer;
@@ -87,6 +90,7 @@ fn prepare_solar_system() -> SimState {
 fn build_ui(app: &Application, mut sim: SimState) {
     let win = ApplicationWindow::new(app);
     let renderer_rc = Rc::new(RefCell::new(Renderer::new(sim.clone(), 0.0, 0.0)));
+    let mouse_state = Rc::new(RefCell::new(MouseState::None));
 
     win.set_title("Gravity simulator");
     win.set_default_size(640, 480);
@@ -111,6 +115,11 @@ fn build_ui(app: &Application, mut sim: SimState) {
     });
 
     let drawing_area = gtk::DrawingArea::new();
+    drawing_area.set_events(
+        gdk::EventMask::POINTER_MOTION_MASK
+            | gdk::EventMask::POINTER_MOTION_HINT_MASK
+            | gdk::EventMask::BUTTON_PRESS_MASK,
+    );
     let drawing_area_clone = drawing_area.clone();
 
     let renderer1 = renderer_rc.clone();
@@ -122,13 +131,31 @@ fn build_ui(app: &Application, mut sim: SimState) {
     });
 
     let renderer2 = renderer_rc.clone();
-
     drawing_area.connect_draw(move |area, cr| {
         let w = area.get_allocated_width() as f64;
         let h = area.get_allocated_height() as f64;
         renderer2.borrow_mut().update_dimensions(w, h);
 
         renderer2.borrow().render(cr);
+
+        glib::signal::Inhibit(true)
+    });
+
+    let renderer3 = renderer_rc.clone();
+    let mouse_state1 = mouse_state.clone();
+    drawing_area.connect_motion_notify_event(move |_area, event| {
+        let (pos_x, pos_y) = event.get_position();
+        if let Some((dx, dy)) =
+            mouse_state1
+                .borrow_mut()
+                .handle_motion(event.get_state(), pos_x, pos_y)
+        {
+            renderer3.borrow_mut().shift_center(dx, dy);
+        }
+
+        if event.get_is_hint() {
+            event.request_motions();
+        }
 
         glib::signal::Inhibit(true)
     });
