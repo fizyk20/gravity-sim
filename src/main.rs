@@ -14,7 +14,7 @@ use std::rc::Rc;
 use std::thread;
 use std::time::Instant;
 
-use mouse_state::MouseState;
+use mouse_state::{MouseResult, MouseState};
 use nalgebra::Vector2;
 use numeric_algs::integration::{Integrator, RK4Integrator, StepSize};
 use renderer::Renderer;
@@ -145,12 +145,17 @@ fn build_ui(app: &Application, mut sim: SimState) {
     let mouse_state1 = mouse_state.clone();
     drawing_area.connect_motion_notify_event(move |_area, event| {
         let (pos_x, pos_y) = event.get_position();
-        if let Some((dx, dy)) =
-            mouse_state1
-                .borrow_mut()
-                .handle_motion(event.get_state(), pos_x, pos_y)
+        match mouse_state1
+            .borrow_mut()
+            .handle_motion(event.get_state(), pos_x, pos_y)
         {
-            renderer3.borrow_mut().shift_center(dx, dy);
+            MouseResult::Drag1(dx, dy) => {
+                renderer3.borrow_mut().shift_center(dx, dy);
+            }
+            MouseResult::Drag2(_dx, dy) => {
+                renderer3.borrow_mut().change_zoom(dy);
+            }
+            _ => (),
         }
 
         if event.get_is_hint() {

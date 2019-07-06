@@ -14,6 +14,7 @@ pub struct Renderer {
     da_width: f64,
     da_height: f64,
     center: SceneCenter,
+    length_scale: f64,
 }
 
 impl Renderer {
@@ -23,6 +24,7 @@ impl Renderer {
             da_width,
             da_height,
             center: SceneCenter::CenterOfMass(0.0, 0.0),
+            length_scale: 4000.0,
         }
     }
 
@@ -41,7 +43,7 @@ impl Renderer {
         } else {
             self.da_height
         };
-        smaller_dim / 4000.0
+        smaller_dim / self.length_scale
     }
 
     fn center(&self) -> (f64, f64) {
@@ -70,6 +72,10 @@ impl Renderer {
                 *y += dy;
             }
         }
+    }
+
+    pub fn change_zoom(&mut self, dy: f64) {
+        self.length_scale *= (dy / 400.0).exp();
     }
 
     fn center_of_mass(&self) -> (f64, f64) {
