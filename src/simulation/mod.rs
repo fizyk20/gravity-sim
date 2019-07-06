@@ -4,6 +4,7 @@ pub use body::Body;
 use nalgebra::{DVector, Vector2};
 use num::Zero;
 use numeric_algs::{State, StateDerivative};
+use std::fmt;
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
 type Position = Vector2<f64>;
@@ -66,6 +67,15 @@ impl State for SimState {
                 body.vel[j] += dir.0[i * DIM * 2 + DIM + j] * amount;
             }
         }
+    }
+}
+
+impl fmt::Debug for SimState {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        for (i, body) in self.bodies.iter().enumerate() {
+            writeln!(formatter, "{}. {:?}", i + 1, body)?;
+        }
+        Ok(())
     }
 }
 

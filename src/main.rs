@@ -2,10 +2,15 @@ mod simulation;
 
 use gio::prelude::*;
 use gio::ApplicationFlags;
+use glib;
 use gtk::prelude::*;
-use gtk::{Application, ApplicationWindow};
+use gtk::{self, Application, ApplicationWindow};
+
+use std::thread;
+use std::time::Instant;
 
 use nalgebra::Vector2;
+use numeric_algs::integration::{Integrator, RK4Integrator, StepSize};
 use simulation::{Body, SimState, G};
 
 fn pericenter(a: f64, ecc: f64) -> f64 {
@@ -60,20 +65,51 @@ fn prepare_solar_system() -> SimState {
     sim
 }
 
+fn build_ui(app: &Application, mut sim: SimState) {
+    let win = ApplicationWindow::new(app);
+
+    win.set_title("Gravity simulator");
+    win.set_default_size(640, 480);
+
+    let sim_label = gtk::Label::new(Some(&format!("{:?}", sim)));
+
+    win.add(&sim_label);
+
+    let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
+
+    thread::spawn(move || {
+        let mut integrator = RK4Integrator::new(0.1);
+        let mut prev_step = Instant::now();
+        loop {
+            let now = Instant::now();
+            let time_diff = now - prev_step;
+            prev_step = now;
+            let time_diff = time_diff.as_secs() as f64 + time_diff.subsec_nanos() as f64 / 1e9;
+            integrator.propagate_in_place(
+                &mut sim,
+                SimState::derivative,
+                StepSize::Step(time_diff),
+            );
+            let _ = tx.send(sim.clone());
+        }
+    });
+
+    rx.attach(None, move |sim_state| {
+        sim_label.set_text(&format!("{:?}", sim_state));
+
+        glib::Continue(true)
+    });
+
+    win.show_all();
+}
+
 fn main() {
     let sim = prepare_solar_system();
 
     let app = Application::new(None, ApplicationFlags::FLAGS_NONE)
         .expect("Couldn't create a GTK application!");
 
-    app.connect_activate(|app| {
-        let win = ApplicationWindow::new(app);
-
-        win.set_title("Gravity simulator");
-        win.set_default_size(640, 480);
-
-        win.show_all();
-    });
+    app.connect_activate(move |app| build_ui(app, sim.clone()));
 
     app.run(&[]);
 }
