@@ -62,9 +62,16 @@ fn prepare_solar_system() -> SimState {
         vel: Vector2::new(0.0, v_earth + v_moon),
     };
 
+    let test = Body {
+        mass: 0.01,
+        pos: Vector2::new(500.0, 0.0),
+        vel: Vector2::new(0.0, 393.0),
+    };
+
     sim.add_body(sun);
     sim.add_body(earth);
     sim.add_body(moon);
+    sim.add_body(test);
 
     sim
 }
