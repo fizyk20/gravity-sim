@@ -1,11 +1,19 @@
 use crate::simulation::SimState;
 use cairo::Context;
+use nalgebra::Vector2;
 use std::f64::consts::PI;
+
+pub enum SceneCenter {
+    Free(f64, f64),
+    CenterOfMass,
+    Body(usize),
+}
 
 pub struct Renderer {
     state: SimState,
     da_width: f64,
     da_height: f64,
+    center: SceneCenter,
 }
 
 impl Renderer {
@@ -14,6 +22,7 @@ impl Renderer {
             state,
             da_width,
             da_height,
+            center: SceneCenter::CenterOfMass,
         }
     }
 
@@ -35,10 +44,31 @@ impl Renderer {
         smaller_dim / 4000.0
     }
 
+    fn center(&self) -> (f64, f64) {
+        match self.center {
+            SceneCenter::Free(x, y) => (x, y),
+            SceneCenter::CenterOfMass => self.center_of_mass(),
+            SceneCenter::Body(i) => {
+                let body = self.state.get_body(i);
+                (body.pos[0], body.pos[1])
+            }
+        }
+    }
+
+    fn center_of_mass(&self) -> (f64, f64) {
+        let mut center = Vector2::new(0.0, 0.0);
+        let mut mass = 0.0;
+        for body in self.state.bodies() {
+            center += body.pos * body.mass;
+            mass += body.mass;
+        }
+        center /= mass;
+        (center[0], center[1])
+    }
+
     // converts sim coordinates to drawing area coordinates
     fn sim_to_da(&self, x: f64, y: f64) -> (f64, f64) {
-        let center_x = 0.0;
-        let center_y = 0.0;
+        let (center_x, center_y) = self.center();
 
         let da_x = (x - center_x) * self.scale() + self.da_width / 2.0;
         let da_y = (center_y - y) * self.scale() + self.da_height / 2.0;

@@ -59,6 +59,10 @@ impl SimState {
     pub fn bodies(&self) -> impl Iterator<Item = &Body> {
         self.bodies.iter()
     }
+
+    pub fn get_body(&self, idx: usize) -> &Body {
+        &self.bodies[idx]
+    }
 }
 
 impl State for SimState {
