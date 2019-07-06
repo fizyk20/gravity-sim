@@ -1,3 +1,4 @@
+mod renderer;
 mod simulation;
 
 use gio::prelude::*;
@@ -6,11 +7,14 @@ use glib;
 use gtk::prelude::*;
 use gtk::{self, Application, ApplicationWindow};
 
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::thread;
 use std::time::Instant;
 
 use nalgebra::Vector2;
 use numeric_algs::integration::{Integrator, RK4Integrator, StepSize};
+use renderer::Renderer;
 use simulation::{Body, SimState, G};
 
 fn pericenter(a: f64, ecc: f64) -> f64 {
@@ -67,13 +71,10 @@ fn prepare_solar_system() -> SimState {
 
 fn build_ui(app: &Application, mut sim: SimState) {
     let win = ApplicationWindow::new(app);
+    let renderer_rc = Rc::new(RefCell::new(Renderer::new(sim.clone(), 0.0, 0.0)));
 
     win.set_title("Gravity simulator");
     win.set_default_size(640, 480);
-
-    let sim_label = gtk::Label::new(Some(&format!("{:?}", sim)));
-
-    win.add(&sim_label);
 
     let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
 
@@ -94,11 +95,30 @@ fn build_ui(app: &Application, mut sim: SimState) {
         }
     });
 
+    let drawing_area = gtk::DrawingArea::new();
+    let drawing_area_clone = drawing_area.clone();
+
+    let renderer1 = renderer_rc.clone();
     rx.attach(None, move |sim_state| {
-        sim_label.set_text(&format!("{:?}", sim_state));
+        renderer1.borrow_mut().update_state(sim_state);
+        drawing_area_clone.queue_draw();
 
         glib::Continue(true)
     });
+
+    let renderer2 = renderer_rc.clone();
+
+    drawing_area.connect_draw(move |area, cr| {
+        let w = area.get_allocated_width() as f64;
+        let h = area.get_allocated_height() as f64;
+        renderer2.borrow_mut().update_dimensions(w, h);
+
+        renderer2.borrow().render(cr);
+
+        glib::signal::Inhibit(true)
+    });
+
+    win.add(&drawing_area);
 
     win.show_all();
 }

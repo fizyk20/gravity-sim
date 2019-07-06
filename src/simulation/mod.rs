@@ -55,6 +55,10 @@ impl SimState {
         }
         SimDerivative(DVector::from_vec(derivative))
     }
+
+    pub fn bodies(&self) -> impl Iterator<Item = &Body> {
+        self.bodies.iter()
+    }
 }
 
 impl State for SimState {
