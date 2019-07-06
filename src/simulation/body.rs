@@ -6,6 +6,10 @@ pub struct Body {
     pub mass: f64,
     pub pos: Position,
     pub vel: Velocity,
+
+    // data for drawing
+    pub radius: f64,
+    pub color: (f64, f64, f64),
 }
 
 impl Body {
