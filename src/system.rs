@@ -56,7 +56,7 @@ pub fn create_solar_system() -> SimState {
     file.read_to_string(&mut contents).unwrap();
     let config = serde_yaml::from_str::<Config>(&contents).unwrap();
 
-    let mut sim = SimState::new();
+    let mut sim = SimState::new(config.exponent);
 
     for body in config.bodies {
         sim.add_body(body.into_body());

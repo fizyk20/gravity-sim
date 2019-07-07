@@ -27,12 +27,16 @@ pub const G: f64 = 24.412652716032003;
 
 #[derive(Clone)]
 pub struct SimState {
+    exponent: f64,
     bodies: Vec<Body>,
 }
 
 impl SimState {
-    pub fn new() -> Self {
-        Self { bodies: Vec::new() }
+    pub fn new(exponent: f64) -> Self {
+        Self {
+            exponent,
+            bodies: Vec::new(),
+        }
     }
 
     pub fn add_body(&mut self, body: Body) {
@@ -52,7 +56,7 @@ impl SimState {
                 }
                 let diff = body2.pos - body.pos;
                 let dist = body.distance_from(body2);
-                let part_accel = G * body2.mass / dist / dist;
+                let part_accel = G * body2.mass * dist.powf(self.exponent);
                 accel += part_accel * diff / dist;
             }
             for j in 0..DIM {
