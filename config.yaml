@@ -1,6 +1,11 @@
-# The exponent in the law of gravity: "e" in "F = G*M*m*r^e"
+# The gravitational constant and exponent in the law of gravity: "G" and "e" in "F = G*M*m*r^e"
+# Real-world value is 6.67408e-11 m^3 kg^-1 s^-2
+grav_const: 6.67408e-11
 # Newtionian gravity is e = -2
 exponent: -2
+# Time scale: how many simulated second elapse during a real-world second
+# Default: 1 sec = 1 week (604800 seconds)
+time_scale: 604800
 
 # The list of simulated body
 bodies:

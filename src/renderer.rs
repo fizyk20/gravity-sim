@@ -34,7 +34,7 @@ impl Renderer {
             da_width,
             da_height,
             center: SceneCenter::CenterOfMass(0.0, 0.0),
-            length_scale: 4000.0,
+            length_scale: 4e8,
         }
     }
 

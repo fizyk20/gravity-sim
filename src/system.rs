@@ -1,4 +1,4 @@
-use crate::simulation::{Body, SimState, G};
+use crate::simulation::{Body, SimState};
 use nalgebra::Vector2;
 use serde::{Deserialize, Serialize};
 
@@ -8,6 +8,8 @@ use std::io::Read;
 #[derive(Clone, Serialize, Deserialize)]
 struct Config {
     exponent: f64,
+    grav_const: f64,
+    time_scale: f64,
     bodies: Vec<ConfigBody>,
 }
 
@@ -21,18 +23,14 @@ struct ConfigBody {
     color: (f64, f64, f64),
 }
 
-const CONV_MASS: f64 = 1e-24;
-const CONV_POS: f64 = 1e-5;
-const CONV_VEL: f64 = 6.048;
-
 impl ConfigBody {
     fn into_body(self) -> Body {
         Body {
             name: self.name,
-            mass: self.mass * CONV_MASS,
-            pos: Vector2::new(self.pos.0 * CONV_POS, self.pos.1 * CONV_POS),
-            vel: Vector2::new(self.vel.0 * CONV_VEL, self.vel.1 * CONV_VEL),
-            radius: self.radius * CONV_POS,
+            mass: self.mass,
+            pos: Vector2::new(self.pos.0, self.pos.1),
+            vel: Vector2::new(self.vel.0, self.vel.1),
+            radius: self.radius,
             color: self.color,
         }
     }
@@ -45,7 +43,7 @@ fn pericenter(a: f64, ecc: f64) -> f64 {
 
 #[allow(unused)]
 fn vel_at_r(m_center: f64, a: f64, r: f64) -> f64 {
-    (G * m_center * (2.0 / r - 1.0 / a)).sqrt()
+    (m_center * (2.0 / r - 1.0 / a)).sqrt()
 }
 
 pub fn create_solar_system() -> SimState {
@@ -56,7 +54,7 @@ pub fn create_solar_system() -> SimState {
     file.read_to_string(&mut contents).unwrap();
     let config = serde_yaml::from_str::<Config>(&contents).unwrap();
 
-    let mut sim = SimState::new(config.exponent);
+    let mut sim = SimState::new(config.grav_const, config.exponent, config.time_scale);
 
     for body in config.bodies {
         sim.add_body(body.into_body());

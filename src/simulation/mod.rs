@@ -19,22 +19,20 @@ type Velocity = Vector2<f64>;
 
 const DIM: usize = 2;
 
-// Units:
-// Length: 1 = 10^8 m (100 000 km)
-// Time: 1 = 7 days (a week)
-// Mass: 1 = 10^24 kg
-pub const G: f64 = 24.412652716032003;
-
 #[derive(Clone)]
 pub struct SimState {
     exponent: f64,
+    grav_const: f64,
+    time_scale: f64,
     bodies: Vec<Body>,
 }
 
 impl SimState {
-    pub fn new(exponent: f64) -> Self {
+    pub fn new(grav_const: f64, exponent: f64, time_scale: f64) -> Self {
         Self {
             exponent,
+            grav_const,
+            time_scale,
             bodies: Vec::new(),
         }
     }
@@ -56,12 +54,15 @@ impl SimState {
                 }
                 let diff = body2.pos - body.pos;
                 let dist = body.distance_from(body2);
-                let part_accel = G * body2.mass * dist.powf(self.exponent);
+                // correction by 1e3 needed because dist is in km, and grav_const assumes meters
+                let part_accel = self.grav_const * body2.mass * (dist * 1e3).powf(self.exponent);
                 accel += part_accel * diff / dist;
             }
             for j in 0..DIM {
-                derivative[i * DIM * 2 + j] = body.vel[j];
-                derivative[i * DIM * 2 + DIM + j] = accel[j];
+                derivative[i * DIM * 2 + j] = body.vel[j] * self.time_scale;
+                // like above - all distances and velocities are in km (km/s), but acceleration
+                // comes out in m/s^2
+                derivative[i * DIM * 2 + DIM + j] = accel[j] * self.time_scale / 1e3;
             }
         }
         SimDerivative(DVector::from_vec(derivative))
