@@ -1,11 +1,18 @@
 mod body;
 
 pub use body::Body;
+use glib;
 use nalgebra::{DVector, Vector2};
 use num::Zero;
-use numeric_algs::{State, StateDerivative};
+use numeric_algs::{
+    integration::{Integrator, RK4Integrator, StepSize},
+    State, StateDerivative,
+};
+
 use std::fmt;
 use std::ops::{Add, Div, Mul, Neg, Sub};
+use std::thread;
+use std::time::{Duration, Instant};
 
 type Position = Vector2<f64>;
 type Velocity = Vector2<f64>;
@@ -98,6 +105,35 @@ impl fmt::Debug for SimState {
         }
         Ok(())
     }
+}
+
+const FRAME: f64 = 0.016;
+
+fn seconds(duration: Duration) -> f64 {
+    duration.as_secs() as f64 + duration.subsec_nanos() as f64 / 1e9
+}
+
+pub fn start_simulation(tx: glib::Sender<SimState>, mut sim: SimState) {
+    thread::spawn(move || {
+        let mut integrator = RK4Integrator::new(0.1);
+        let mut prev_step = Instant::now();
+        let mut prev_frame = Instant::now();
+        loop {
+            let now = Instant::now();
+            let time_diff = now - prev_step;
+            prev_step = now;
+            let time_diff = seconds(time_diff);
+            integrator.propagate_in_place(
+                &mut sim,
+                SimState::derivative,
+                StepSize::Step(time_diff),
+            );
+            if seconds(now - prev_frame) > FRAME {
+                let _ = tx.send(sim.clone());
+                prev_frame = now;
+            }
+        }
+    });
 }
 
 #[derive(Clone)]

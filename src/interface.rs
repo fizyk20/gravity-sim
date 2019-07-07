@@ -1,23 +1,14 @@
 use crate::mouse_state::{MouseResult, MouseState};
 use crate::renderer::Renderer;
-use crate::simulation::SimState;
+use crate::simulation::{start_simulation, SimState};
 
 use gdk;
 use glib;
 use gtk::prelude::*;
 use gtk::{self, Application, ApplicationWindow};
-use numeric_algs::integration::{Integrator, RK4Integrator, StepSize};
 
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::thread;
-use std::time::{Duration, Instant};
-
-const FRAME: f64 = 0.016;
-
-fn seconds(duration: Duration) -> f64 {
-    duration.as_secs() as f64 + duration.subsec_nanos() as f64 / 1e9
-}
 
 fn create_drawing_area(
     renderer_rc: &Rc<RefCell<Renderer>>,
@@ -68,7 +59,7 @@ fn create_drawing_area(
     drawing_area
 }
 
-pub fn build_ui(app: &Application, mut sim: SimState) {
+pub fn build_ui(app: &Application, sim: SimState) {
     let win = ApplicationWindow::new(app);
     let renderer_rc = Rc::new(RefCell::new(Renderer::new(sim.clone(), 0.0, 0.0)));
     let mouse_state = Rc::new(RefCell::new(MouseState::None));
@@ -80,26 +71,7 @@ pub fn build_ui(app: &Application, mut sim: SimState) {
 
     let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
 
-    thread::spawn(move || {
-        let mut integrator = RK4Integrator::new(0.1);
-        let mut prev_step = Instant::now();
-        let mut prev_frame = Instant::now();
-        loop {
-            let now = Instant::now();
-            let time_diff = now - prev_step;
-            prev_step = now;
-            let time_diff = seconds(time_diff);
-            integrator.propagate_in_place(
-                &mut sim,
-                SimState::derivative,
-                StepSize::Step(time_diff),
-            );
-            if seconds(now - prev_frame) > FRAME {
-                let _ = tx.send(sim.clone());
-                prev_frame = now;
-            }
-        }
-    });
+    start_simulation(tx, sim);
 
     let renderer1 = renderer_rc.clone();
     let drawing_area_clone = drawing_area.clone();
