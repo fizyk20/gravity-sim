@@ -41,6 +41,7 @@ fn prepare_solar_system() -> SimState {
     let v_sun = (m_earth * v_earth + m_moon * v_moon) / m_sun;
 
     let sun = Body {
+        name: "Sun".to_owned(),
         mass: 1.989e6,
         pos: Vector2::new(0.0, 0.0),
         vel: Vector2::new(0.0, -v_sun),
@@ -48,6 +49,7 @@ fn prepare_solar_system() -> SimState {
         color: (1.0, 1.0, 0.0),
     };
     let earth = Body {
+        name: "Earth".to_owned(),
         mass: 5.975,
         pos: Vector2::new(p_earth, 0.0),
         vel: Vector2::new(0.0, v_earth),
@@ -55,6 +57,7 @@ fn prepare_solar_system() -> SimState {
         color: (0.0, 1.0, 1.0),
     };
     let moon = Body {
+        name: "Moon".to_owned(),
         mass: 0.07348,
         pos: Vector2::new(p_earth + p_moon, 0.0),
         vel: Vector2::new(0.0, v_earth + v_moon),
@@ -63,6 +66,7 @@ fn prepare_solar_system() -> SimState {
     };
 
     let test = Body {
+        name: "Test body".to_owned(),
         mass: 0.01,
         pos: Vector2::new(500.0, 0.0),
         vel: Vector2::new(0.0, 393.0),

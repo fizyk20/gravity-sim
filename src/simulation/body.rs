@@ -1,8 +1,10 @@
 use super::{Position, Velocity};
 use std::fmt;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct Body {
+    pub name: String,
+
     pub mass: f64,
     pub pos: Position,
     pub vel: Velocity,
@@ -23,8 +25,8 @@ impl fmt::Debug for Body {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(
             formatter,
-            "Body {{ m = {}; pos = [{:10.3} ; {:10.3}]; vel = [{:10.3} ; {:10.3}] }}",
-            self.mass, self.pos[0], self.pos[1], self.vel[0], self.vel[1]
+            "{} {{ m = {}; pos = [{:10.3} ; {:10.3}]; vel = [{:10.3} ; {:10.3}] }}",
+            self.name, self.mass, self.pos[0], self.pos[1], self.vel[0], self.vel[1]
         )
     }
 }

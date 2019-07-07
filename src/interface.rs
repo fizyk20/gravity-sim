@@ -56,22 +56,58 @@ fn create_drawing_area(
         glib::signal::Inhibit(true)
     });
 
+    drawing_area.set_hexpand(true);
+    drawing_area.set_vexpand(true);
+
     drawing_area
 }
 
-pub fn build_ui(app: &Application, sim: SimState) {
-    let win = ApplicationWindow::new(app);
-    let renderer_rc = Rc::new(RefCell::new(Renderer::new(sim.clone(), 0.0, 0.0)));
-    let mouse_state = Rc::new(RefCell::new(MouseState::None));
+fn create_bodies_select(sim: &SimState, renderer_rc: &Rc<RefCell<Renderer>>) -> gtk::ComboBoxText {
+    let body_select = gtk::ComboBoxText::new();
+    body_select.append_text("Center of mass");
+    for body in sim.bodies() {
+        body_select.append_text(&body.name);
+    }
+    body_select.set_active(Some(0));
 
-    win.set_title("Gravity simulator");
-    win.set_default_size(640, 480);
+    let renderer = renderer_rc.clone();
+    body_select.connect_changed(move |cb| {
+        if let Some(text) = cb.get_active_text() {
+            let text = text.as_str();
+            renderer.borrow_mut().set_reference(text);
+        }
+    });
+
+    body_select
+}
+
+fn create_scene_display(
+    renderer_rc: &Rc<RefCell<Renderer>>,
+    mouse_state: &Rc<RefCell<MouseState>>,
+    sim: SimState,
+) -> gtk::Box {
+    let main_box = gtk::Box::new(gtk::Orientation::Horizontal, 10);
 
     let drawing_area = create_drawing_area(&renderer_rc, &mouse_state);
 
-    let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
+    main_box.add(&drawing_area);
 
-    start_simulation(tx, sim);
+    let side_box = gtk::Box::new(gtk::Orientation::Vertical, 10);
+
+    let body_select_label = gtk::Label::new(Some("Frame of reference:"));
+    let body_select = create_bodies_select(&sim, renderer_rc);
+
+    side_box.add(&body_select_label);
+    side_box.add(&body_select);
+
+    main_box.add(&side_box);
+
+    main_box.set_margin_top(10);
+    main_box.set_margin_bottom(10);
+    main_box.set_margin_start(10);
+    main_box.set_margin_end(10);
+
+    let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
 
     let renderer1 = renderer_rc.clone();
     let drawing_area_clone = drawing_area.clone();
@@ -82,7 +118,22 @@ pub fn build_ui(app: &Application, sim: SimState) {
         glib::Continue(true)
     });
 
-    win.add(&drawing_area);
+    start_simulation(tx, sim);
+
+    main_box
+}
+
+pub fn build_ui(app: &Application, sim: SimState) {
+    let win = ApplicationWindow::new(app);
+    let renderer_rc = Rc::new(RefCell::new(Renderer::new(sim.clone(), 0.0, 0.0)));
+    let mouse_state = Rc::new(RefCell::new(MouseState::None));
+
+    win.set_title("Gravity simulator");
+    win.set_default_size(640, 480);
+
+    let scene_display = create_scene_display(&renderer_rc, &mouse_state, sim);
+
+    win.add(&scene_display);
 
     win.show_all();
 }

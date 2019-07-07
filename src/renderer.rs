@@ -99,6 +99,22 @@ impl Renderer {
         self.length_scale *= (dy / 400.0).exp();
     }
 
+    fn get_body_by_name(&self, name: &str) -> Option<usize> {
+        self.state
+            .bodies()
+            .enumerate()
+            .find(|(_, body)| &body.name == name)
+            .map(|(i, _)| i)
+    }
+
+    pub fn set_reference(&mut self, reference: &str) {
+        if let Some(body) = self.get_body_by_name(reference) {
+            self.center = SceneCenter::Body(body, 0.0, 0.0);
+        } else {
+            self.center = SceneCenter::CenterOfMass(0.0, 0.0);
+        }
+    }
+
     // converts sim coordinates to drawing area coordinates
     fn sim_to_da(&self, x: f64, y: f64) -> (f64, f64) {
         let (center_x, center_y) = self.center();
@@ -130,11 +146,12 @@ impl Renderer {
                 let (x, y) = self.sim_to_da(pos[0], pos[1]);
                 cr.line_to(x, y);
             }
+            let (x, y) = self.sim_to_da(body.pos[0], body.pos[1]);
+            cr.line_to(x, y);
 
             cr.stroke();
 
             // draw the body
-            let (x, y) = self.sim_to_da(body.pos[0], body.pos[1]);
             let radius = body.radius * self.scale() * 3.0;
 
             cr.arc(x, y, radius, 0.0, 2.0 * PI);
