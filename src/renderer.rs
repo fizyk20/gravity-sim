@@ -1,6 +1,7 @@
 use crate::simulation::SimState;
 use cairo::Context;
 use nalgebra::Vector2;
+use std::collections::VecDeque;
 use std::f64::consts::PI;
 
 pub enum SceneCenter {
@@ -9,8 +10,11 @@ pub enum SceneCenter {
     Body(usize, f64, f64),
 }
 
+const MAX_PATH_LEN: usize = 1_000;
+
 pub struct Renderer {
     state: SimState,
+    path_history: Vec<VecDeque<Vector2<f64>>>,
     da_width: f64,
     da_height: f64,
     center: SceneCenter,
@@ -19,8 +23,15 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn new(state: SimState, da_width: f64, da_height: f64) -> Self {
+        let mut path_history = Vec::new();
+        for body in state.bodies() {
+            let mut path = VecDeque::new();
+            path.push_back(body.pos);
+            path_history.push(path);
+        }
         Self {
             state,
+            path_history,
             da_width,
             da_height,
             center: SceneCenter::CenterOfMass(0.0, 0.0),
@@ -30,6 +41,22 @@ impl Renderer {
 
     pub fn update_state(&mut self, new_state: SimState) {
         self.state = new_state;
+        for (i, body) in self.state.bodies().enumerate() {
+            let last_pos = self.path_history[i].back();
+            if last_pos
+                .map(|last_pos| {
+                    let diff = body.pos - last_pos;
+                    let len = diff.dot(&diff).sqrt();
+                    len > 10.0
+                })
+                .unwrap_or(true)
+            {
+                self.path_history[i].push_back(body.pos);
+                if self.path_history[i].len() > MAX_PATH_LEN {
+                    let _ = self.path_history[i].pop_front();
+                }
+            }
+        }
     }
 
     pub fn update_dimensions(&mut self, width: f64, height: f64) {
@@ -107,11 +134,26 @@ impl Renderer {
         cr.set_source_rgb(1.0, 1.0, 1.0);
         cr.fill();
 
-        for body in self.state.bodies() {
+        for (i, body) in self.state.bodies().enumerate() {
+            cr.set_source_rgb(body.color.0, body.color.1, body.color.2);
+            cr.set_line_width(0.5);
+
+            // draw path
+            let init_pos = self.path_history[i][0];
+            let (x, y) = self.sim_to_da(init_pos[0], init_pos[1]);
+            cr.move_to(x, y);
+
+            for pos in &self.path_history[i] {
+                let (x, y) = self.sim_to_da(pos[0], pos[1]);
+                cr.line_to(x, y);
+            }
+
+            cr.stroke();
+
+            // draw the body
             let (x, y) = self.sim_to_da(body.pos[0], body.pos[1]);
             let radius = body.radius * self.scale() * 3.0;
 
-            cr.set_source_rgb(body.color.0, body.color.1, body.color.2);
             cr.arc(x, y, radius, 0.0, 2.0 * PI);
             cr.fill();
 
