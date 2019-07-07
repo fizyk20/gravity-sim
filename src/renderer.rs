@@ -46,7 +46,7 @@ impl Renderer {
                 .map(|last_pos| {
                     let diff = body.pos - last_pos;
                     let len = diff.dot(&diff).sqrt();
-                    len > 10.0
+                    len > 1e6
                 })
                 .unwrap_or(true)
             {
