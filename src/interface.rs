@@ -11,9 +11,13 @@ use numeric_algs::integration::{Integrator, RK4Integrator, StepSize};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::thread;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
-const SKIP: usize = 10;
+const FRAME: f64 = 0.016;
+
+fn seconds(duration: Duration) -> f64 {
+    duration.as_secs() as f64 + duration.subsec_nanos() as f64 / 1e9
+}
 
 pub fn build_ui(app: &Application, mut sim: SimState) {
     let win = ApplicationWindow::new(app);
@@ -28,21 +32,20 @@ pub fn build_ui(app: &Application, mut sim: SimState) {
     thread::spawn(move || {
         let mut integrator = RK4Integrator::new(0.1);
         let mut prev_step = Instant::now();
-        let mut skip = 0;
+        let mut prev_frame = Instant::now();
         loop {
             let now = Instant::now();
             let time_diff = now - prev_step;
             prev_step = now;
-            let time_diff = time_diff.as_secs() as f64 + time_diff.subsec_nanos() as f64 / 1e9;
+            let time_diff = seconds(time_diff);
             integrator.propagate_in_place(
                 &mut sim,
                 SimState::derivative,
                 StepSize::Step(time_diff),
             );
-            skip += 1;
-            if skip == SKIP {
+            if seconds(now - prev_frame) > FRAME {
                 let _ = tx.send(sim.clone());
-                skip = 0;
+                prev_frame = now;
             }
         }
     });
