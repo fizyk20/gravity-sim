@@ -1,19 +1,25 @@
+# The exponent in the law of gravity: "e" in "F = G*M*m*r^e"
+# Newtionian gravity is e = -2
 exponent: -2
-bodies:
-    - name: Sun
-      mass: 1.989e30
-      pos:
-        - 0.0
-        - 0.0
-      vel:
-        - 0.0
-        - 0.0
-      radius: 696000
-      color:
-        - 1.0
-        - 1.0
-        - 0.0
 
+# The list of simulated body
+bodies:
+    # A body definition consists of the following:
+    - name: Sun         # name (will be shown in the list of reference frames)
+      mass: 1.989e30    # mass in kg
+      pos:              # initial position in km
+        - 0.0           # x coordinate
+        - 0.0           # y coordinate
+      vel:              # initial velocity in km/s
+        - 0.0           # x coordinate
+        - 0.0           # y coordinate
+      radius: 696000    # body radius in km
+      color:            # body color
+        - 1.0           # red (0-1)
+        - 1.0           # green (0-1)
+        - 0.0           # blue (0-1)
+
+    # Other bodies - same values as above
     - name: Earth
       mass: 5.975e24
       pos:
