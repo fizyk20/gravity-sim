@@ -1,0 +1,57 @@
+exponent: -2
+bodies:
+    - name: Sun
+      mass: 1.989e30
+      pos:
+        - 0.0
+        - 0.0
+      vel:
+        - 0.0
+        - 0.0
+      radius: 696000
+      color:
+        - 1.0
+        - 1.0
+        - 0.0
+
+    - name: Earth
+      mass: 5.975e24
+      pos:
+        - 147.1e6
+        - 0.0
+      vel:
+        - 0.0
+        - 30.29
+      radius: 6371
+      color:
+        - 0.0
+        - 1.0
+        - 1.0
+
+    - name: Moon
+      mass: 7.348e22
+      pos:
+        - 147.46326e6
+        - 0.0
+      vel:
+        - 0.0
+        - 31.366
+      radius: 1700
+      color:
+        - 0.5
+        - 0.5
+        - 0.5
+
+    - name: Test body
+      mass: 1e22
+      pos:
+        - 50.0e6
+        - 0.0
+      vel:
+        - 0.0
+        - 64.98
+      radius: 1700
+      color:
+        - 0.5
+        - 0.5
+        - 0.5
