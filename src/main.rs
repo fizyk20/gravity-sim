@@ -60,14 +60,14 @@ fn prepare_solar_system() -> SimState {
         mass: 5.975,
         pos: Vector2::new(p_earth, 0.0),
         vel: Vector2::new(0.0, v_earth),
-        radius: 1.0,
+        radius: 0.064,
         color: (0.0, 1.0, 1.0),
     };
     let moon = Body {
         mass: 0.07348,
         pos: Vector2::new(p_earth + p_moon, 0.0),
         vel: Vector2::new(0.0, v_earth + v_moon),
-        radius: 1.0,
+        radius: 0.017,
         color: (0.5, 0.5, 0.5),
     };
 
