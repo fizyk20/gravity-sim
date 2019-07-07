@@ -19,52 +19,16 @@ fn seconds(duration: Duration) -> f64 {
     duration.as_secs() as f64 + duration.subsec_nanos() as f64 / 1e9
 }
 
-pub fn build_ui(app: &Application, mut sim: SimState) {
-    let win = ApplicationWindow::new(app);
-    let renderer_rc = Rc::new(RefCell::new(Renderer::new(sim.clone(), 0.0, 0.0)));
-    let mouse_state = Rc::new(RefCell::new(MouseState::None));
-
-    win.set_title("Gravity simulator");
-    win.set_default_size(640, 480);
-
-    let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
-
-    thread::spawn(move || {
-        let mut integrator = RK4Integrator::new(0.1);
-        let mut prev_step = Instant::now();
-        let mut prev_frame = Instant::now();
-        loop {
-            let now = Instant::now();
-            let time_diff = now - prev_step;
-            prev_step = now;
-            let time_diff = seconds(time_diff);
-            integrator.propagate_in_place(
-                &mut sim,
-                SimState::derivative,
-                StepSize::Step(time_diff),
-            );
-            if seconds(now - prev_frame) > FRAME {
-                let _ = tx.send(sim.clone());
-                prev_frame = now;
-            }
-        }
-    });
-
+fn create_drawing_area(
+    renderer_rc: &Rc<RefCell<Renderer>>,
+    mouse_state: &Rc<RefCell<MouseState>>,
+) -> gtk::DrawingArea {
     let drawing_area = gtk::DrawingArea::new();
     drawing_area.set_events(
         gdk::EventMask::POINTER_MOTION_MASK
             | gdk::EventMask::POINTER_MOTION_HINT_MASK
             | gdk::EventMask::BUTTON_PRESS_MASK,
     );
-    let drawing_area_clone = drawing_area.clone();
-
-    let renderer1 = renderer_rc.clone();
-    rx.attach(None, move |sim_state| {
-        renderer1.borrow_mut().update_state(sim_state);
-        drawing_area_clone.queue_draw();
-
-        glib::Continue(true)
-    });
 
     let renderer2 = renderer_rc.clone();
     drawing_area.connect_draw(move |area, cr| {
@@ -99,6 +63,51 @@ pub fn build_ui(app: &Application, mut sim: SimState) {
         }
 
         glib::signal::Inhibit(true)
+    });
+
+    drawing_area
+}
+
+pub fn build_ui(app: &Application, mut sim: SimState) {
+    let win = ApplicationWindow::new(app);
+    let renderer_rc = Rc::new(RefCell::new(Renderer::new(sim.clone(), 0.0, 0.0)));
+    let mouse_state = Rc::new(RefCell::new(MouseState::None));
+
+    win.set_title("Gravity simulator");
+    win.set_default_size(640, 480);
+
+    let drawing_area = create_drawing_area(&renderer_rc, &mouse_state);
+
+    let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
+
+    thread::spawn(move || {
+        let mut integrator = RK4Integrator::new(0.1);
+        let mut prev_step = Instant::now();
+        let mut prev_frame = Instant::now();
+        loop {
+            let now = Instant::now();
+            let time_diff = now - prev_step;
+            prev_step = now;
+            let time_diff = seconds(time_diff);
+            integrator.propagate_in_place(
+                &mut sim,
+                SimState::derivative,
+                StepSize::Step(time_diff),
+            );
+            if seconds(now - prev_frame) > FRAME {
+                let _ = tx.send(sim.clone());
+                prev_frame = now;
+            }
+        }
+    });
+
+    let renderer1 = renderer_rc.clone();
+    let drawing_area_clone = drawing_area.clone();
+    rx.attach(None, move |sim_state| {
+        renderer1.borrow_mut().update_state(sim_state);
+        drawing_area_clone.queue_draw();
+
+        glib::Continue(true)
     });
 
     win.add(&drawing_area);
