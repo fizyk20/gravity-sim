@@ -5,7 +5,6 @@ use std::collections::VecDeque;
 use std::f64::consts::PI;
 
 pub enum SceneCenter {
-    Free(f64, f64),
     CenterOfMass(f64, f64),
     Body(usize, f64, f64),
 }
@@ -75,11 +74,7 @@ impl Renderer {
 
     fn center(&self) -> (f64, f64) {
         match self.center {
-            SceneCenter::Free(x, y) => (x, y),
-            SceneCenter::CenterOfMass(add_x, add_y) => {
-                let (x, y) = self.center_of_mass();
-                (x + add_x, y + add_y)
-            }
+            SceneCenter::CenterOfMass(x, y) => (x, y),
             SceneCenter::Body(i, add_x, add_y) => {
                 let body = self.state.get_body(i);
                 (body.pos[0] + add_x, body.pos[1] + add_y)
@@ -92,8 +87,7 @@ impl Renderer {
         let dy = dy / self.scale();
 
         match self.center {
-            SceneCenter::Free(ref mut x, ref mut y)
-            | SceneCenter::CenterOfMass(ref mut x, ref mut y)
+            SceneCenter::CenterOfMass(ref mut x, ref mut y)
             | SceneCenter::Body(_, ref mut x, ref mut y) => {
                 *x += dx;
                 *y += dy;
@@ -103,17 +97,6 @@ impl Renderer {
 
     pub fn change_zoom(&mut self, dy: f64) {
         self.length_scale *= (dy / 400.0).exp();
-    }
-
-    fn center_of_mass(&self) -> (f64, f64) {
-        let mut center = Vector2::new(0.0, 0.0);
-        let mut mass = 0.0;
-        for body in self.state.bodies() {
-            center += body.pos * body.mass;
-            mass += body.mass;
-        }
-        center /= mass;
-        (center[0], center[1])
     }
 
     // converts sim coordinates to drawing area coordinates

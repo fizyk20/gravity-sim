@@ -84,6 +84,8 @@ fn prepare_solar_system() -> SimState {
     sim.add_body(moon);
     sim.add_body(test);
 
+    sim.adjust_for_center_of_mass();
+
     sim
 }
 

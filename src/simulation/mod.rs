@@ -56,6 +56,19 @@ impl SimState {
         SimDerivative(DVector::from_vec(derivative))
     }
 
+    pub fn adjust_for_center_of_mass(&mut self) {
+        let mut total_mom = Vector2::new(0.0, 0.0);
+        let mut total_mass = 0.0;
+        for body in &self.bodies {
+            total_mom += body.vel * body.mass;
+            total_mass += body.mass;
+        }
+
+        for body in &mut self.bodies {
+            body.vel -= total_mom / total_mass;
+        }
+    }
+
     pub fn bodies(&self) -> impl Iterator<Item = &Body> {
         self.bodies.iter()
     }
