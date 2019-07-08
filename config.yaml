@@ -66,3 +66,9 @@ bodies:
         - 0.5
         - 0.5
         - 0.5
+
+# Pairs of bodies that will _not_ interact gravitationally
+# Example:
+turn_off:
+    - - Earth
+      - Moon

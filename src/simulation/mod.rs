@@ -9,6 +9,7 @@ use numeric_algs::{
     State, StateDerivative,
 };
 
+use std::collections::HashSet;
 use std::fmt;
 use std::ops::{Add, Div, Mul, Neg, Sub};
 use std::thread;
@@ -25,6 +26,7 @@ pub struct SimState {
     grav_const: f64,
     time_scale: f64,
     bodies: Vec<Body>,
+    turn_off: HashSet<(usize, usize)>,
 }
 
 impl SimState {
@@ -34,11 +36,28 @@ impl SimState {
             grav_const,
             time_scale,
             bodies: Vec::new(),
+            turn_off: HashSet::new(),
         }
     }
 
     pub fn add_body(&mut self, body: Body) {
         self.bodies.push(body);
+    }
+
+    pub fn body_by_name(&self, name: &str) -> Option<usize> {
+        self.bodies
+            .iter()
+            .enumerate()
+            .find(|(_, body)| body.name == name)
+            .map(|(idx, _)| idx)
+    }
+
+    pub fn turn_off(&mut self, name1: &str, name2: &str) {
+        let _ = self.body_by_name(name1).and_then(|body1| {
+            self.body_by_name(name2).map(|body2| {
+                let _ = self.turn_off.insert((body1, body2));
+            })
+        });
     }
 
     pub fn derivative(&self) -> SimDerivative {
@@ -50,6 +69,10 @@ impl SimState {
             let mut accel: Vector2<f64> = Zero::zero();
             for (i2, body2) in self.bodies.iter().enumerate() {
                 if i2 == i {
+                    continue;
+                }
+                // Turn off interactions between selected pairs
+                if self.turn_off.contains(&(i, i2)) || self.turn_off.contains(&(i2, i)) {
                     continue;
                 }
                 let diff = body2.pos - body.pos;

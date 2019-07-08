@@ -11,6 +11,7 @@ struct Config {
     grav_const: f64,
     time_scale: f64,
     bodies: Vec<ConfigBody>,
+    turn_off: Vec<(String, String)>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -58,6 +59,10 @@ pub fn create_solar_system() -> SimState {
 
     for body in config.bodies {
         sim.add_body(body.into_body());
+    }
+
+    for (name1, name2) in config.turn_off {
+        sim.turn_off(&name1, &name2);
     }
 
     sim.adjust_for_center_of_mass();

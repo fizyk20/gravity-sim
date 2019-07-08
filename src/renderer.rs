@@ -99,16 +99,8 @@ impl Renderer {
         self.length_scale *= (dy / 400.0).exp();
     }
 
-    fn get_body_by_name(&self, name: &str) -> Option<usize> {
-        self.state
-            .bodies()
-            .enumerate()
-            .find(|(_, body)| &body.name == name)
-            .map(|(i, _)| i)
-    }
-
     pub fn set_reference(&mut self, reference: &str) {
-        if let Some(body) = self.get_body_by_name(reference) {
+        if let Some(body) = self.state.body_by_name(reference) {
             self.center = SceneCenter::Body(body, 0.0, 0.0);
         } else {
             self.center = SceneCenter::CenterOfMass(0.0, 0.0);
