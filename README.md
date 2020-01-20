@@ -1,5 +1,7 @@
 # Gravity simulator
 
+[![Join the chat at https://gitter.im/gravity-sim/community](https://badges.gitter.im/gravity-sim/community.svg)](https://gitter.im/gravity-sim/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 A simple program simulating gravity in 2 dimensions.
 
 The purpose of this program is to provide some educational features, like:
